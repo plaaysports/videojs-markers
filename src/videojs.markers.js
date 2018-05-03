@@ -184,6 +184,12 @@ function registerVideoJsMarkersPlugin(options) {
       markerDiv.style[key] = setting.markerStyle[key];
     });
 
+    // Patch: Set marker's color. This patch can be avoided by setting marker.class,
+    // but we need to store somewhere overlay.background-color...
+    if (marker.color) {
+      markerDiv.style['background-color'] = marker.color;
+    }
+
     // hide out-of-bound markers
     const ratio = marker.time / player.duration();
     if (ratio < 0 || ratio > 1) {
@@ -326,6 +332,14 @@ function registerVideoJsMarkersPlugin(options) {
         overlayIndex = currentMarkerIndex;
         if (breakOverlay) {
           breakOverlay.querySelector('.vjs-break-overlay-text').innerHTML = setting.breakOverlay.text(marker);
+          // Patch: Set overlay window's background color
+          if (setting.breakOverlay.dynamicColors) {
+            if (marker.color) {
+              breakOverlay.style["background-color"] = marker.color;
+            } else {
+              breakOverlay.style["background-color"] = setting.markerStyle["background-color"];
+            }
+          }
         }
       }
 
@@ -344,7 +358,9 @@ function registerVideoJsMarkersPlugin(options) {
   function initializeOverlay(): void {
     breakOverlay = videojs.createEl('div', {
       className: 'vjs-break-overlay',
-      innerHTML: "<div class='vjs-break-overlay-text'></div>"
+      innerHTML: "<div class='vjs-break-overlay-text'></div>",
+      // Patch: Overlay window can overlap play/pause button and never disappear
+      onclick: function () { breakOverlay.style.visibility = "hidden"; }
     });
     Object.keys(setting.breakOverlay.style).forEach(key => {
       if (breakOverlay) {
